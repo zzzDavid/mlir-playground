@@ -20,6 +20,8 @@ mlir-opt matmul.mlir \
 ```
 
 ## Creating a JiT (mlir-cpu-runner)
+Simply do:
+
 ```shell
 ./jit.sh
 ```
