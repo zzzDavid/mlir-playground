@@ -9,13 +9,12 @@ module {
         return
     }
 
-    func @main() {
+    func @main() -> (){
         %A = memref.alloc() : memref<8x8xf32>
         %B = memref.alloc() : memref<8x8xf32>
         %C = memref.alloc() : memref<8x8xf32>
         
         %cf1 = std.constant 1.0 : f32
-        // %cf1 = arith.constant 1.0 : f32
         
         linalg.fill(%cf1, %A) : f32, memref<8x8xf32>
         linalg.fill(%cf1, %B) : f32, memref<8x8xf32>
