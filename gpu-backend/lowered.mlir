@@ -1,6 +1,8 @@
 module {
   func @top(%arg0: memref<32x32xf32>, %arg1: memref<32x32xf32>) -> memref<32x32xf32> attributes {itypes = "__", otypes = "_"} {
     %0 = memref.alloc() {name = "C"} : memref<32x32xf32>
+    %casted_0 = memref.cast %0 : memref<32x32xf32> to memref<*xf32>
+    gpu.host_register %casted_0 : memref<*xf32>
     %c0 = arith.constant 0 : index
     %c32 = arith.constant 32 : index
     %c1 = arith.constant 1 : index
