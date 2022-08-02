@@ -100,6 +100,8 @@ module {
 
 We see that mapping attributes are added to `scf.parallel` loops:
 
+<details>
+  <summary> code </summary>
 ```mlir
 #map = affine_map<(d0) -> (d0)>
 module {
@@ -154,11 +156,14 @@ module {
   func private @print_memref_f32(memref<*xf32>)
 }
 ```
+</details>
 
 ### `--convert-parallel-loops-to-gpu`
 
 `scf.parallel` loops with mapping info are converted to gpu launch blocks:
 
+<details>
+  <summary> code </summary>
 ```mlir
 #map0 = affine_map<(d0)[s0, s1] -> ((d0 - s0) ceildiv s1)>
 #map1 = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
@@ -234,10 +239,14 @@ module {
   func private @print_memref_f32(memref<*xf32>)
 }
 ```
+</details>
 
 ### `--gpu-kernel-outlining`
 
 The gpu launch blocks are outlined to `gpu.module` and `gpu.func`:
+
+<details>
+  <summary> code </summary>
 ```mlir
 #map0 = affine_map<(d0)[s0, s1] -> ((d0 - s0) ceildiv s1)>
 #map1 = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
@@ -393,3 +402,4 @@ module attributes {gpu.container_module} {
   func private @print_memref_f32(memref<*xf32>)
 }
 ```
+</details>
