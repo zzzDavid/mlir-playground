@@ -38,6 +38,9 @@ Using `matmul.mlir` as an example:
 
 As the name suggests, it converts linalg to scf.parallel loops.
 
+<details>
+  <summary> code </summary>
+
 ```mlir
 module {
   func @matmul_linalg(%arg0: memref<8x8xf32>, %arg1: memref<8x8xf32>, %arg2: memref<8x8xf32>) {
@@ -91,6 +94,7 @@ module {
   func private @print_memref_f32(memref<*xf32>)
 }
 ```
+<detail>
 
 ### `--test-gpu-greedy-parallel-loop-mapping`
 
