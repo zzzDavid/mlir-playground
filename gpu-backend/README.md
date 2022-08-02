@@ -34,7 +34,7 @@ cmake -G Ninja ../llvm \
 ## What does each pass do?
 Using `matmul.mlir` as an example:
 
-`--convert-linalg-to-parallel-loops`
+### `--convert-linalg-to-parallel-loops`
 
 As the name suggests, it converts linalg to scf.parallel loops.
 
