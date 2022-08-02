@@ -1,7 +1,7 @@
-export LLVM_INSTALL_DIR=/work/shared/common/llvm-project-gpu
+export LLVM_INSTALL_DIR=/work/shared/users/phd/nz264/llvm-project-14.0.0
 export LD_LIBRARY_PATH=$LLVM_INSTALL_DIR/build/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/work/shared/common/usr/local/lib:/work/shared/common/usr/local/lib64:$LD_LIBRARY_PATH
-export PATH=/work/shared/common/llvm-project-gpu/build/bin/:$PATH
+export PATH=$LLVM_INSTALL_DIR/build/bin/:$PATH
 
 mlir-opt matmul.mlir \
     --convert-linalg-to-parallel-loops \

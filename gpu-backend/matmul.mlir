@@ -22,8 +22,8 @@ module {
         %cast_C = memref.cast %C : memref<8x8xf32> to memref<*xf32>
         gpu.host_register %cast_C : memref<*xf32>
         
-        %cf1 = std.constant 1.0 : f32
-        %cf0 = std.constant 0.0 : f32
+        %cf1 = arith.constant 1.0 : f32
+        %cf0 = arith.constant 0.0 : f32
         
         linalg.fill(%cf1, %A) : f32, memref<8x8xf32>
         linalg.fill(%cf1, %B) : f32, memref<8x8xf32>
