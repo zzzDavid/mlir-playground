@@ -249,7 +249,7 @@ The gpu launch blocks are outlined to `gpu.module` and `gpu.func`:
 
 <details>
   <summary> code </summary>
-  
+
 ```mlir
 #map0 = affine_map<(d0)[s0, s1] -> ((d0 - s0) ceildiv s1)>
 #map1 = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
@@ -406,3 +406,271 @@ module attributes {gpu.container_module} {
 }
 ```
 </details>
+
+Note that all the memref load/store are `memref.load`, `memref.store` instead of `affine.load` and `affine.store`.
+
+### `--lower-affine`
+
+Lowers all the affine operations. Here, it lowers the affine apply operations into arithmetic operations.
+
+<details>
+  <summary> code </summary>
+
+```mlir
+module attributes {gpu.container_module} {
+  func @matmul_linalg(%arg0: memref<8x8xf32>, %arg1: memref<8x8xf32>, %arg2: memref<8x8xf32>) {
+    %c8 = arith.constant 8 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %c1_0 = arith.constant 1 : index
+    %c8_1 = arith.constant 8 : index
+    %c8_2 = arith.constant 8 : index
+    gpu.launch_func  @matmul_linalg_kernel::@matmul_linalg_kernel blocks in (%c8_1, %c8_2, %c1_0) threads in (%c1_0, %c1_0, %c1_0) args(%arg0 : memref<8x8xf32>, %arg1 : memref<8x8xf32>, %arg2 : memref<8x8xf32>)
+    return
+  }
+  gpu.module @matmul_linalg_kernel {
+    gpu.func @matmul_linalg_kernel(%arg0: memref<8x8xf32>, %arg1: memref<8x8xf32>, %arg2: memref<8x8xf32>) kernel {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      br ^bb1
+    ^bb1:  // pred: ^bb0
+      %c1 = arith.constant 1 : index
+      %c0 = arith.constant 0 : index
+      %c8 = arith.constant 8 : index
+      %12 = arith.muli %0, %c1 : index
+      %13 = arith.addi %12, %c0 : index
+      %14 = arith.muli %1, %c1 : index
+      %15 = arith.addi %14, %c0 : index
+      scf.for %arg3 = %c0 to %c8 step %c1 {
+        %16 = memref.load %arg0[%13, %arg3] : memref<8x8xf32>
+        %17 = memref.load %arg1[%arg3, %15] : memref<8x8xf32>
+        %18 = memref.load %arg2[%13, %15] : memref<8x8xf32>
+        %19 = arith.mulf %16, %17 : f32
+        %20 = arith.addf %18, %19 : f32
+        memref.store %20, %arg2[%13, %15] : memref<8x8xf32>
+      }
+      gpu.return
+    }
+  }
+  func @main() {
+    %cst = arith.constant 1.000000e+00 : f32
+    %cst_0 = arith.constant 0.000000e+00 : f32
+    %c8 = arith.constant 8 : index
+    %c0 = arith.constant 0 : index
+    %c1 = arith.constant 1 : index
+    %0 = memref.alloc() : memref<8x8xf32>
+    %1 = memref.alloc() : memref<8x8xf32>
+    %2 = memref.alloc() : memref<8x8xf32>
+    %3 = memref.cast %0 : memref<8x8xf32> to memref<*xf32>
+    gpu.host_register %3 : memref<*xf32>
+    %4 = memref.cast %1 : memref<8x8xf32> to memref<*xf32>
+    gpu.host_register %4 : memref<*xf32>
+    %5 = memref.cast %2 : memref<8x8xf32> to memref<*xf32>
+    gpu.host_register %5 : memref<*xf32>
+    %c1_1 = arith.constant 1 : index
+    %c8_2 = arith.constant 8 : index
+    %c8_3 = arith.constant 8 : index
+    gpu.launch_func  @main_kernel::@main_kernel blocks in (%c8_2, %c8_3, %c1_1) threads in (%c1_1, %c1_1, %c1_1) args(%0 : memref<8x8xf32>)
+    %c1_4 = arith.constant 1 : index
+    %c8_5 = arith.constant 8 : index
+    %c8_6 = arith.constant 8 : index
+    gpu.launch_func  @main_kernel_0::@main_kernel blocks in (%c8_5, %c8_6, %c1_4) threads in (%c1_4, %c1_4, %c1_4) args(%1 : memref<8x8xf32>)
+    %c1_7 = arith.constant 1 : index
+    %c8_8 = arith.constant 8 : index
+    %c8_9 = arith.constant 8 : index
+    gpu.launch_func  @main_kernel_1::@main_kernel blocks in (%c8_8, %c8_9, %c1_7) threads in (%c1_7, %c1_7, %c1_7) args(%2 : memref<8x8xf32>)
+    call @matmul_linalg(%0, %1, %2) : (memref<8x8xf32>, memref<8x8xf32>, memref<8x8xf32>) -> ()
+    call @print_memref_f32(%5) : (memref<*xf32>) -> ()
+    return
+  }
+  gpu.module @main_kernel {
+    gpu.func @main_kernel(%arg0: memref<8x8xf32>) kernel {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      br ^bb1
+    ^bb1:  // pred: ^bb0
+      %c1 = arith.constant 1 : index
+      %c0 = arith.constant 0 : index
+      %cst = arith.constant 1.000000e+00 : f32
+      %12 = arith.muli %0, %c1 : index
+      %13 = arith.addi %12, %c0 : index
+      %14 = arith.muli %1, %c1 : index
+      %15 = arith.addi %14, %c0 : index
+      memref.store %cst, %arg0[%13, %15] : memref<8x8xf32>
+      gpu.return
+    }
+  }
+  gpu.module @main_kernel_0 {
+    gpu.func @main_kernel(%arg0: memref<8x8xf32>) kernel {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      br ^bb1
+    ^bb1:  // pred: ^bb0
+      %c1 = arith.constant 1 : index
+      %c0 = arith.constant 0 : index
+      %cst = arith.constant 1.000000e+00 : f32
+      %12 = arith.muli %0, %c1 : index
+      %13 = arith.addi %12, %c0 : index
+      %14 = arith.muli %1, %c1 : index
+      %15 = arith.addi %14, %c0 : index
+      memref.store %cst, %arg0[%13, %15] : memref<8x8xf32>
+      gpu.return
+    }
+  }
+  gpu.module @main_kernel_1 {
+    gpu.func @main_kernel(%arg0: memref<8x8xf32>) kernel {
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      %2 = gpu.block_id  z
+      %3 = gpu.thread_id  x
+      %4 = gpu.thread_id  y
+      %5 = gpu.thread_id  z
+      %6 = gpu.grid_dim  x
+      %7 = gpu.grid_dim  y
+      %8 = gpu.grid_dim  z
+      %9 = gpu.block_dim  x
+      %10 = gpu.block_dim  y
+      %11 = gpu.block_dim  z
+      br ^bb1
+    ^bb1:  // pred: ^bb0
+      %c1 = arith.constant 1 : index
+      %c0 = arith.constant 0 : index
+      %cst = arith.constant 0.000000e+00 : f32
+      %12 = arith.muli %0, %c1 : index
+      %13 = arith.addi %12, %c0 : index
+      %14 = arith.muli %1, %c1 : index
+      %15 = arith.addi %14, %c0 : index
+      memref.store %cst, %arg0[%13, %15] : memref<8x8xf32>
+      gpu.return
+    }
+  }
+  func private @print_memref_f32(memref<*xf32>)
+}
+```
+</details>
+
+###  `--convert-scf-to-std` and `--canonicalize`
+
+This pass lowers scf loops to std control blocks. But here it doesn't do anything because we are already free of scf operations.
+
+After canonicalization: 
+
+<details>
+  <summary> code </summary>
+
+```mlir
+module attributes {gpu.container_module} {
+  func @matmul_linalg(%arg0: memref<8x8xf32>, %arg1: memref<8x8xf32>, %arg2: memref<8x8xf32>) {
+    %c8 = arith.constant 8 : index
+    %c1 = arith.constant 1 : index
+    gpu.launch_func  @matmul_linalg_kernel::@matmul_linalg_kernel blocks in (%c8, %c8, %c1) threads in (%c1, %c1, %c1) args(%arg0 : memref<8x8xf32>, %arg1 : memref<8x8xf32>, %arg2 : memref<8x8xf32>)
+    return
+  }
+  gpu.module @matmul_linalg_kernel {
+    gpu.func @matmul_linalg_kernel(%arg0: memref<8x8xf32>, %arg1: memref<8x8xf32>, %arg2: memref<8x8xf32>) kernel {
+      %c8 = arith.constant 8 : index
+      %c0 = arith.constant 0 : index
+      %c1 = arith.constant 1 : index
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      br ^bb1(%c0 : index)
+    ^bb1(%2: index):  // 2 preds: ^bb0, ^bb2
+      %3 = arith.cmpi slt, %2, %c8 : index
+      cond_br %3, ^bb2, ^bb3
+    ^bb2:  // pred: ^bb1
+      %4 = memref.load %arg0[%0, %2] : memref<8x8xf32>
+      %5 = memref.load %arg1[%2, %1] : memref<8x8xf32>
+      %6 = memref.load %arg2[%0, %1] : memref<8x8xf32>
+      %7 = arith.mulf %4, %5 : f32
+      %8 = arith.addf %6, %7 : f32
+      memref.store %8, %arg2[%0, %1] : memref<8x8xf32>
+      %9 = arith.addi %2, %c1 : index
+      br ^bb1(%9 : index)
+    ^bb3:  // pred: ^bb1
+      gpu.return
+    }
+  }
+  func @main() {
+    %c8 = arith.constant 8 : index
+    %c1 = arith.constant 1 : index
+    %0 = memref.alloc() : memref<8x8xf32>
+    %1 = memref.alloc() : memref<8x8xf32>
+    %2 = memref.alloc() : memref<8x8xf32>
+    %3 = memref.cast %0 : memref<8x8xf32> to memref<*xf32>
+    gpu.host_register %3 : memref<*xf32>
+    %4 = memref.cast %1 : memref<8x8xf32> to memref<*xf32>
+    gpu.host_register %4 : memref<*xf32>
+    %5 = memref.cast %2 : memref<8x8xf32> to memref<*xf32>
+    gpu.host_register %5 : memref<*xf32>
+    gpu.launch_func  @main_kernel::@main_kernel blocks in (%c8, %c8, %c1) threads in (%c1, %c1, %c1) args(%0 : memref<8x8xf32>)
+    gpu.launch_func  @main_kernel_0::@main_kernel blocks in (%c8, %c8, %c1) threads in (%c1, %c1, %c1) args(%1 : memref<8x8xf32>)
+    gpu.launch_func  @main_kernel_1::@main_kernel blocks in (%c8, %c8, %c1) threads in (%c1, %c1, %c1) args(%2 : memref<8x8xf32>)
+    call @matmul_linalg(%0, %1, %2) : (memref<8x8xf32>, memref<8x8xf32>, memref<8x8xf32>) -> ()
+    call @print_memref_f32(%5) : (memref<*xf32>) -> ()
+    return
+  }
+  gpu.module @main_kernel {
+    gpu.func @main_kernel(%arg0: memref<8x8xf32>) kernel {
+      %cst = arith.constant 1.000000e+00 : f32
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      memref.store %cst, %arg0[%0, %1] : memref<8x8xf32>
+      gpu.return
+    }
+  }
+  gpu.module @main_kernel_0 {
+    gpu.func @main_kernel(%arg0: memref<8x8xf32>) kernel {
+      %cst = arith.constant 1.000000e+00 : f32
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      memref.store %cst, %arg0[%0, %1] : memref<8x8xf32>
+      gpu.return
+    }
+  }
+  gpu.module @main_kernel_1 {
+    gpu.func @main_kernel(%arg0: memref<8x8xf32>) kernel {
+      %cst = arith.constant 0.000000e+00 : f32
+      %0 = gpu.block_id  x
+      %1 = gpu.block_id  y
+      memref.store %cst, %arg0[%0, %1] : memref<8x8xf32>
+      gpu.return
+    }
+  }
+  func private @print_memref_f32(memref<*xf32>)
+}
+```
+
+</details>
+
+
+### `strip-debuginfo`
