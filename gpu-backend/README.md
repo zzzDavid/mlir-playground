@@ -102,6 +102,7 @@ We see that mapping attributes are added to `scf.parallel` loops:
 
 <details>
   <summary> code </summary>
+
 ```mlir
 #map = affine_map<(d0) -> (d0)>
 module {
@@ -164,6 +165,7 @@ module {
 
 <details>
   <summary> code </summary>
+
 ```mlir
 #map0 = affine_map<(d0)[s0, s1] -> ((d0 - s0) ceildiv s1)>
 #map1 = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
@@ -247,6 +249,7 @@ The gpu launch blocks are outlined to `gpu.module` and `gpu.func`:
 
 <details>
   <summary> code </summary>
+  
 ```mlir
 #map0 = affine_map<(d0)[s0, s1] -> ((d0 - s0) ceildiv s1)>
 #map1 = affine_map<(d0)[s0, s1] -> (d0 * s0 + s1)>
