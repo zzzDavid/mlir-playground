@@ -4,8 +4,6 @@ export LD_LIBRARY_PATH=/work/shared/common/usr/local/lib:/work/shared/common/usr
 export PATH=$LLVM_INSTALL_DIR/build/bin/:$PATH
 
 mlir-opt lowered-promoted.mlir \
-    --test-gpu-greedy-parallel-loop-mapping \
-    --convert-parallel-loops-to-gpu \
     --gpu-kernel-outlining \
     --lower-affine \
     --convert-scf-to-std \
